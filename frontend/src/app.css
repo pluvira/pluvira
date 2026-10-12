@@ -1,0 +1,209 @@
+@import "./theme.css";
+
+@layer utilities {
+  .text-display {
+    font-size: 100px;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+  .text-heading {
+    font-size: 56px;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+  .text-body {
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+}
+
+
+@layer components {
+  .surface-card {
+    @apply bg-card text-card-foreground border border-border rounded-md shadow-card;
+  }
+
+  .surface-modal {
+    @apply bg-card text-card-foreground border border-border/80 rounded-t-xl md:rounded-lg shadow-elevated;
+  }
+
+  .modal-sheet-responsive {
+    @apply fixed inset-x-0 bottom-0 max-h-[85dvh] rounded-t-xl md:static md:max-h-[90vh] md:rounded-lg;
+  }
+
+  .surface-header {
+    @apply bg-background border-b border-border;
+  }
+
+  .surface-darkest {
+    @apply bg-background;
+  }
+
+  .surface-page {
+    @apply bg-background;
+  }
+
+  .surface-panel {
+    @apply bg-card;
+  }
+
+  .border-subtle {
+    @apply border-border/40;
+  }
+
+  .border-default {
+    @apply border-border;
+  }
+
+  .border-strong {
+    @apply border-border;
+  }
+
+  .input-base {
+    @apply bg-background text-foreground border border-input rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-ring disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 w-full;
+  }
+
+  .btn-base {
+    @apply inline-flex items-center justify-center font-sans transition-colors duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center font-sans transition-colors duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer bg-primary text-primary-foreground hover:opacity-90 active:opacity-80;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center font-sans transition-colors duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer bg-secondary text-secondary-foreground hover:opacity-90 border border-border;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center font-sans transition-colors duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer bg-transparent text-foreground border border-border hover:bg-muted;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center font-sans transition-colors duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer bg-destructive text-destructive-foreground hover:opacity-90;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center font-sans transition-colors duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer bg-transparent text-foreground hover:bg-muted;
+  }
+
+  .badge-base {
+    @apply inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-sm;
+  }
+
+  .badge-primary {
+    @apply inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-sm bg-primary text-primary-foreground;
+  }
+
+  .badge-success {
+    @apply inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-sm bg-success/20 text-success border border-success/30;
+  }
+
+  .badge-warning {
+    @apply inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-sm bg-warning/20 text-warning border border-warning/30;
+  }
+
+  .badge-error {
+    @apply inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-sm bg-destructive/20 text-destructive border border-destructive/30;
+  }
+
+  .badge-muted {
+    @apply inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-sm bg-muted text-muted-foreground;
+  }
+
+  .table-base {
+    @apply w-full text-left text-xs border-collapse table-fixed;
+  }
+
+  .table-th {
+    @apply bg-background border-b border-border text-muted-foreground font-bold uppercase tracking-wider p-3;
+  }
+
+  .table-tr {
+    @apply border-b border-border/40 hover:bg-muted/50 transition-colors;
+  }
+
+  .table-td {
+    @apply p-3;
+  }
+
+  .table-cell-btn {
+    @apply text-xs hover:text-foreground transition-colors cursor-pointer text-left truncate w-full block;
+  }
+
+  /* Feedback States & Informational Panels */
+  .state-empty {
+    @apply bg-card border border-border rounded-md shadow-card flex flex-col items-center justify-center p-12 text-muted-foreground text-center gap-2;
+  }
+
+  .panel-mono {
+    @apply bg-background p-3 rounded border border-border flex flex-col gap-1 font-mono text-[11px] text-foreground break-all;
+  }
+
+  .banner-warning {
+    @apply bg-warning/10 border border-warning/40 text-foreground rounded-md p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-card;
+  }
+
+  .banner-error {
+    @apply bg-destructive/10 border border-destructive/40 text-destructive-foreground p-2.5 rounded text-xs font-bold text-center;
+  }
+
+  /* List Items & Typography */
+  .list-item-btn {
+    @apply w-full text-left p-2.5 rounded border border-border bg-background hover:bg-card transition-colors flex flex-col gap-1 cursor-pointer;
+  }
+
+  .list-item-btn-selected {
+    @apply !bg-primary/20 !border-primary;
+  }
+
+  .text-caps-label {
+    @apply text-xs font-bold text-muted-foreground uppercase tracking-wider;
+  }
+
+  .text-mono-link {
+    @apply font-mono text-primary text-[11px] break-all;
+  }
+
+  /* Form Controls */
+  .spinner {
+    @apply w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin;
+  }
+
+  .panel-box {
+    @apply bg-background p-3 rounded border border-border flex flex-col gap-1.5 text-xs;
+  }
+  .textarea-base {
+    @apply bg-background text-foreground border border-input rounded-md px-3 py-1.5 text-sm focus:outline-none focus:border-ring disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 w-full font-mono text-xs leading-relaxed;
+  }
+
+  .select-compact {
+    @apply bg-card text-foreground border border-border rounded px-2 py-0.5 text-xs cursor-pointer focus:outline-none focus:border-ring;
+  }
+
+  /* Responsive & Mobile Layout Helpers */
+  .page-container-responsive {
+    @apply p-2 sm:p-4 md:p-6 w-full flex flex-col gap-4 overflow-x-hidden;
+  }
+
+  .touch-btn {
+    @apply min-h-[44px] min-w-[44px] inline-flex items-center justify-center;
+  }
+
+  .segmented-control {
+    @apply flex items-center bg-card border border-border/40 p-1 rounded-lg gap-1 w-full;
+  }
+
+  .segmented-item {
+    @apply flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-bold transition-colors cursor-pointer select-none text-muted-foreground hover:text-foreground;
+  }
+
+  .segmented-item-active {
+    @apply bg-primary text-primary-foreground shadow-xs hover:text-primary-foreground;
+  }
+
+  .channel-card-mobile {
+    @apply p-3 bg-background border border-border/30 rounded-lg flex items-center justify-between gap-3 transition-colors cursor-pointer hover:bg-card active:bg-muted/50;
+  }
+}

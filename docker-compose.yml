@@ -1,0 +1,34 @@
+services:
+  pluvira:
+    image: ghcr.io/pluvira/app:latest
+    container_name: pluvira-app
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8585}:8585"
+      - "5353:5353/udp"
+    # Note: For full local LAN multicast discovery on NAS (Synology, TrueNAS, QNAP),
+    # uncomment 'network_mode: host' below and comment out 'ports:'.
+    # network_mode: host
+    volumes:
+      # Map local config and data directories to the container
+      - ./config:/app/config
+      - ./data:/app/data
+    tmpfs:
+      # Mount a 256MB RAM disk inside the container to protect SMR disks from micro-writes
+      - /dev/shm:exec,size=256M
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - PLUVIRA_CONFIG_DIR=/app/config
+      - PLUVIRA_DATA_DIR=/app/data
+      - PLUVIRA_TEMP_DIR=/dev/shm/pluvira
+      - PLUVIRA_API_HOST=0.0.0.0
+      - PLUVIRA_API_PORT=8585
+      # Optional: Headless Pro license key (alternative to WebUI / RFC 8628 pairing)
+      # - PLUVIRA_LICENSE_KEY=${PLUVIRA_LICENSE_KEY:-}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8585/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

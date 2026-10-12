@@ -1,0 +1,11 @@
+export { default as GeneralTab } from './GeneralTab.svelte';
+export { default as SourcesTab } from './SourcesTab.svelte';
+export { default as UpdatesTab } from './UpdatesTab.svelte';
+export { default as BackupHubTab } from './BackupHubTab.svelte';
+export { default as IptvSourcesTab } from './IptvSourcesTab.svelte';
+export { default as EpgSourcesTab } from './EpgSourcesTab.svelte';
+export { default as PlaylistsTab } from './PlaylistsTab.svelte';
+export { default as SchedulerTab } from './SchedulerTab.svelte';
+export { default as NotificationsTab } from './NotificationsTab.svelte';
+export { default as BackupTab } from './BackupTab.svelte';
+export { default as HistoryTab } from './HistoryTab.svelte';

@@ -1,0 +1,30 @@
+# docker-compose.override.yml.example
+# ==============================================================================
+# Pluvira Local Development Override Template
+# Copy to 'docker-compose.override.yml' to enable local build and hot-reloading.
+# ==============================================================================
+
+services:
+  pluvira:
+    # 1. Build local container from Dockerfile
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    # 2. Map direct development port
+    ports:
+      - "8585:8585"
+      - "5353:5353/udp"
+    # network_mode: host
+
+    # 3. Live source mounts for hot-reload
+    volumes:
+      - ./backend:/app/backend:ro
+      - ./frontend/dist:/app/frontend/dist:ro
+      # Optional: bind-mount local compiled Pro Rust binary
+      # - /opt/pluvira/bin/pluvira-pro:/app/bin/pluvira-pro:ro
+
+    # 4. Local development environment overrides
+    environment:
+      - PLUVIRA_API_HOST=0.0.0.0
+      # - PLUVIRA_LICENSE_KEY=${PLUVIRA_LICENSE_KEY:-}
