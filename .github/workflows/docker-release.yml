@@ -1,0 +1,161 @@
+name: Build & Release Multi-Arch Container
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish images to GHCR and Docker Hub"
+        type: boolean
+        required: true
+        default: false
+      tag_name:
+        description: "Release tag for image (e.g. 1.0.0-alpha)"
+        type: string
+        required: true
+        default: "1.0.0-alpha"
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  docker-release:
+    name: Build & Release Multi-Arch Images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Determine Tag & Push Mode
+        id: prep
+        run: |
+          HASH="${GITHUB_SHA::7}"
+          REPO="${{ github.repository }}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "push=${{ inputs.publish }}" >> "$GITHUB_OUTPUT"
+            echo "tag=${{ inputs.tag_name }}" >> "$GITHUB_OUTPUT"
+          else
+            TAG="${GITHUB_REF#refs/tags/v}"
+            echo "push=true" >> "$GITHUB_OUTPUT"
+            echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          fi
+          echo "hash=${HASH}" >> "$GITHUB_OUTPUT"
+          if [ "$REPO" = "pluvira/pluvira-dev" ]; then
+            echo "image_ghcr=ghcr.io/pluvira/dev" >> "$GITHUB_OUTPUT"
+            echo "is_dev=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "image_ghcr=ghcr.io/pluvira/app" >> "$GITHUB_OUTPUT"
+            echo "is_dev=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up QEMU (ARM64 emulation)
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: steps.prep.outputs.push == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to Docker Hub
+        if: steps.prep.outputs.push == 'true' && env.DOCKERHUB_USER != ''
+        env:
+          DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Stage Pro Native Binaries
+        env:
+          GH_TOKEN: ${{ secrets.PLUVIRA_PRO_READ_TOKEN || secrets.PRO_READ_TOKEN }}
+        run: |
+          mkdir -p bin/linux/amd64 bin/linux/arm64 tmp_pro/amd64 tmp_pro/arm64
+          if [ -n "${GH_TOKEN:-}" ]; then
+            echo "Downloading native Pro binary archives from pluvira-pro release..."
+            TARGET_TAG="v${{ steps.prep.outputs.tag }}"
+
+            # Download AMD64 tar.gz archive
+            if ! gh release download "$TARGET_TAG" --repo pluvira/pluvira-pro --pattern "*x86_64*linux*.tar.gz" --dir tmp_pro/amd64 2>/dev/null; then
+              echo "Tag $TARGET_TAG not found in pluvira-pro, downloading latest release archive for amd64..."
+              gh release download --repo pluvira/pluvira-pro --pattern "*x86_64*linux*.tar.gz" --dir tmp_pro/amd64 || true
+            fi
+
+            # Download ARM64 tar.gz archive
+            if ! gh release download "$TARGET_TAG" --repo pluvira/pluvira-pro --pattern "*aarch64*linux*.tar.gz" --dir tmp_pro/arm64 2>/dev/null; then
+              echo "Tag $TARGET_TAG not found in pluvira-pro, downloading latest release archive for arm64..."
+              gh release download --repo pluvira/pluvira-pro --pattern "*aarch64*linux*.tar.gz" --dir tmp_pro/arm64 || true
+            fi
+
+            # Extract AMD64 archive
+            for f in tmp_pro/amd64/*.tar.gz; do
+              [ -f "$f" ] && tar -xzf "$f" -C bin/linux/amd64/ || true
+            done
+
+            # Extract ARM64 archive
+            for f in tmp_pro/arm64/*.tar.gz; do
+              [ -f "$f" ] && tar -xzf "$f" -C bin/linux/arm64/ || true
+            done
+
+            # Normalize binary filenames if nested
+            for arch in amd64 arm64; do
+              if [ ! -f "bin/linux/${arch}/pluvira-pro" ]; then
+                found_bin=$(find "bin/linux/${arch}" -type f -name "pluvira-pro*" ! -name "*.tar.gz" 2>/dev/null | head -n 1 || true)
+                if [ -n "$found_bin" ]; then
+                  mv "$found_bin" "bin/linux/${arch}/pluvira-pro"
+                fi
+              fi
+            done
+
+            chmod +x bin/linux/*/pluvira-pro 2>/dev/null || true
+            rm -rf tmp_pro
+          else
+            echo "No PLUVIRA_PRO_READ_TOKEN provided; building image without bundled Pro binary."
+          fi
+          touch bin/linux/amd64/.keep bin/linux/arm64/.keep
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: ${{ steps.prep.outputs.push == 'true' }}
+          build-args: |
+            APP_VERSION=${{ steps.prep.outputs.tag }}
+            GIT_HASH=${{ steps.prep.outputs.hash }}
+          tags: |
+            ${{ steps.prep.outputs.image_ghcr }}:${{ steps.prep.outputs.tag }}
+            ${{ steps.prep.outputs.image_ghcr }}:latest
+            ${{ steps.prep.outputs.is_dev == 'false' && secrets.DOCKERHUB_USERNAME != '' && format('pluvira/app:{0}', steps.prep.outputs.tag) || '' }}
+            ${{ steps.prep.outputs.is_dev == 'false' && secrets.DOCKERHUB_USERNAME != '' && 'pluvira/app:latest' || '' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Publish GitHub Release
+        if: steps.prep.outputs.push == 'true' && startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PRERELEASE_FLAG=""
+          if echo "${{ steps.prep.outputs.tag }}" | grep -qiE 'alpha|beta|rc|dev'; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+          if gh release view "${{ github.ref_name }}" >/dev/null 2>&1; then
+            echo "Release ${{ github.ref_name }} already exists."
+          else
+            echo "Creating GitHub Release ${{ github.ref_name }}..."
+            gh release create "${{ github.ref_name }}" \
+              --title "Pluvira ${{ steps.prep.outputs.tag }}" \
+              --generate-notes \
+              $PRERELEASE_FLAG
+          fi
