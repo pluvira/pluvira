@@ -82,20 +82,13 @@ jobs:
         run: |
           mkdir -p bin/linux/amd64 bin/linux/arm64 tmp_pro/amd64 tmp_pro/arm64
           if [ -n "${GH_TOKEN:-}" ]; then
-            echo "Downloading native Pro binary archives from pluvira-pro release..."
-            TARGET_TAG="v${{ steps.prep.outputs.tag }}"
+            echo "Downloading latest native Pro binary archives from pluvira-pro..."
 
-            # Download AMD64 tar.gz archive
-            if ! gh release download "$TARGET_TAG" --repo pluvira/pluvira-pro --pattern "*x86_64*linux*.tar.gz" --dir tmp_pro/amd64 2>/dev/null; then
-              echo "Tag $TARGET_TAG not found in pluvira-pro, downloading latest release archive for amd64..."
-              gh release download --repo pluvira/pluvira-pro --pattern "*x86_64*linux*.tar.gz" --dir tmp_pro/amd64 || true
-            fi
+            # Download latest AMD64 tar.gz archive
+            gh release download --repo pluvira/pluvira-pro --pattern "*x86_64*linux*.tar.gz" --dir tmp_pro/amd64 || true
 
-            # Download ARM64 tar.gz archive
-            if ! gh release download "$TARGET_TAG" --repo pluvira/pluvira-pro --pattern "*aarch64*linux*.tar.gz" --dir tmp_pro/arm64 2>/dev/null; then
-              echo "Tag $TARGET_TAG not found in pluvira-pro, downloading latest release archive for arm64..."
-              gh release download --repo pluvira/pluvira-pro --pattern "*aarch64*linux*.tar.gz" --dir tmp_pro/arm64 || true
-            fi
+            # Download latest ARM64 tar.gz archive
+            gh release download --repo pluvira/pluvira-pro --pattern "*aarch64*linux*.tar.gz" --dir tmp_pro/arm64 || true
 
             # Extract AMD64 archive
             for f in tmp_pro/amd64/*.tar.gz; do
@@ -130,6 +123,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: ${{ steps.prep.outputs.push == 'true' }}
+          no-cache: true
           build-args: |
             APP_VERSION=${{ steps.prep.outputs.tag }}
             GIT_HASH=${{ steps.prep.outputs.hash }}
@@ -138,8 +132,6 @@ jobs:
             ${{ steps.prep.outputs.image_ghcr }}:latest
             ${{ steps.prep.outputs.is_dev == 'false' && secrets.DOCKERHUB_USERNAME != '' && format('pluvira/app:{0}', steps.prep.outputs.tag) || '' }}
             ${{ steps.prep.outputs.is_dev == 'false' && secrets.DOCKERHUB_USERNAME != '' && 'pluvira/app:latest' || '' }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Publish GitHub Release
         if: steps.prep.outputs.push == 'true' && startsWith(github.ref, 'refs/tags/v')
